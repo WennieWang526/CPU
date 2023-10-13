@@ -1,0 +1,166 @@
+---
+title: "Stat650 Final Project"
+author: "Yuanyuan Fan,Wennie(Wenling) Wang, Michael Pantoja Collasso"
+format: pdf
+---
+
+```{r}
+library(openintro)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+```
+
+```{r}
+data("cpu")
+str(cpu)
+```
+
+```{r}
+class(cpu) # that cpu is structured as a data frame structure
+```
+
+In our analysis, we found that there are 304 AMD processors and 571 Intel processors in our data set. There are 267 more Intel processors than AMD processors in the dataset, indicating a significant difference in the number of processors between the two manufacturers.
+
+```{r}
+table(cpu$company)
+```
+
+```{r}
+# Create a histogram of the count of AMD and Intel processors
+ggplot(cpu) +
+  geom_bar(aes(x=company))
+```
+
+```{r}
+summary(cpu)
+```
+
+### Which processor have smaller number of process node:
+
+```{r}
+ggplot(cpu) +
+  geom_boxplot(aes(x=company, y=process)) +
+  labs(y = 'Process Node (nm)')
+```
+
+### Which processor have more cores? And does the number of cores lead to smaller size of process node?
+
+```{r warning=FALSE}
+ggplot(cpu) +
+  geom_boxplot(aes(x=company, y=cores)) +
+  xlab
+```
+
+```{r warning=FALSE}
+ggplot(cpu, aes(x=cores, y=process, color=company)) +
+  geom_point() +
+  geom_smooth(se=F) +
+  labs(x = 'Number of Cores', y = 'Size of Process(nm)')
+```
+### Which processor have faster boost clock? Does faster boost clock related to the size of process node?
+ 
+```{r}
+ggplot(cpu, aes(x=process, y=boost_clock, color=company, shape = company)) +
+  geom_point() 
+```
+
+```{r}
+cpu |>
+  group_by(company) |>
+  summarize(mean_process = mean(process, na.rm = TRUE)) 
+
+cpu |>
+  group_by(company) |>
+ summarize(mean_boost_clock = mean(boost_clock, na.rm = TRUE))
+
+```
+
+### Illustrate the relationship among these three variables:
+
+```{r}
+ggplot(cpu, aes(x =cores , y = process, color = boost_clock, shape = company)) +
+  geom_point(size = 3) +
+  labs(x = "Number of Cores", y = "Size of Process(nm)",
+       color = "Boost Clock(GHz)")
+```
+
+```{r}
+ggplot(cpu, aes(x =company , y = boost_clock)) +
+  geom_boxplot() +
+  labs(y = "Boost Clock(GHz)", title = 'Comparing Max CPU Speeds Between Companies')
+```
+### How CPU improved by looking at max speed and the size of process for the past ten years.
+
+```{r}
+library(lubridate)
+library(tibble)
+
+t <- ymd(cpu$released)
+
+# Create a new tibble with year column
+cpu_new <- cpu |>
+  select() |>
+  mutate(year = year(t))
+cpu_new
+```
+
+##### Because we don't have any unique variables, we can't use left_join() or other join() functions. Instead, we combine two tibbles by using **bind_cols()** function:
+
+```{r}
+joined_cpu <- bind_cols(cpu, cpu_new) 
+dim(joined_cpu)
+```
+
+```{r}
+# only analyze Intel:
+joined_cpu_Intel <-
+  subset(joined_cpu, company == "Intel")
+dim(joined_cpu_Intel)
+```
+
+The following plot shows that over time, the size of process node of Intel CPU  has been decreased and the maximum speed has been increased.
+
+```{r warning = FALSE}
+ggplot(joined_cpu_Intel, aes(x = year, y = process, color = boost_clock)) +
+  geom_point() +
+  geom_smooth() +
+  labs(x = "Year of Release", y = "Size of Process", color = "Speed of boost clock") +
+  scale_color_gradient(low = "blue", high = "red") 
+```
+
+
+\newpage
+
+## Description
+Data on computer processors released between 2010 and 2020.
+
+Format: A data frame with 875 rows and 12 variables.
+
+company: Manufacturer of the CPU.  
+There are two major manufacturers of computer processors, Intel® and AMD
+
+name: Model name of the processor.
+
+codename: Name given by manufacturer to all chips with this architecture.
+
+cores: Number of compute cores per processor.
+
+threads: The number of threads represents the number of simultaneous calculations that can be ongoing in the processor.
+
+base_clock: Base speed for the CPU in GHz.
+
+boost_clock: Single-core max speed for the CPU in GHz.
+
+socket: Specifies the type of connection to the motherboard.
+
+process: Size of the process node used in production in nm.
+
+l3_cache: Size of the level 3 cache on the processor in MB.
+
+tdp: Total draw power of the processor.
+
+released: Date which the processor was released to the public.
+
+
+
